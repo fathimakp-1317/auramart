@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables - Never commit
+.env
+*.env
+
+# Database
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+*.log
+
+# ElasticSearch data
+esdata/
+
+# OS
+.DS_Store
+Thumbs.db
