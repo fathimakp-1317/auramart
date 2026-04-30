@@ -1,0 +1,25 @@
+# Virtual environment — Docker installs its own
+venv/
+.venv/
+
+# Environment file — never put in Docker image
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Git files
+.git/
+.gitignore
+
+# Test files
+tests/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
