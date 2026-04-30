@@ -15,7 +15,7 @@ class Order(models.Model):
                             primary_key=True,
                             default=uuid.uuid4,
                             editable=False)
-    user_id           = models.UUIDField()
+    user_id           = models.CharField(max_length=255)
     # user_id comes from JWT token — never from request body
     status            = models.CharField(
                             max_length=20,
@@ -47,9 +47,9 @@ class OrderItem(models.Model):
                      Order,
                      on_delete=models.CASCADE,
                      related_name="items")
-    product_id = models.UUIDField()
+    product_id = models.CharField(max_length=255)
     # product_id from product-service — no FK across services
-    vendor_id  = models.UUIDField()
+    vendor_id  = models.CharField(max_length=255)
     quantity   = models.IntegerField()
     unit_price = models.DecimalField(
                      max_digits=10,
