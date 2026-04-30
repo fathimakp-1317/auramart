@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.cart",
     "apps.payments",
     "apps.inventory",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
