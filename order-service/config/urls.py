@@ -14,6 +14,7 @@ def health_check(request):
                 "/api/v1/cart/",
                 "/api/v1/orders/",
                 "/api/v1/inventory/",
+                "/api/v1/payments/",
             ]
         }
     })
@@ -31,4 +32,6 @@ urlpatterns = [
          include("apps.orders.urls")),
     path("api/v1/inventory/",
          include("apps.inventory.urls")),
+    path("api/v1/payments/",
+         include("apps.payments.urls")),
 ]
