@@ -275,3 +275,61 @@ def checkout(request):
                 "message": str(e)
             }
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+from .order_flow import full_order_flow
+
+
+@api_view(["POST"])
+def place_order(request):
+    """
+    THE MAIN ENDPOINT.
+    Single endpoint that does everything:
+
+    1. Gets cart
+    2. Checks stock
+    3. Creates order
+    4. Sets up Stripe payment
+    5. Clears cart
+    6. Publishes RabbitMQ event
+
+    Returns order + client_secret for payment.
+
+    Expects:
+    { "user_id": "uuid" }
+    """
+    user_id = request.data.get("user_id")
+
+    if not user_id:
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "MISSING_USER_ID",
+                "message": "user_id is required"
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        result = full_order_flow(user_id)
+        return Response({
+            "success": True,
+            "data":    result
+        }, status=status.HTTP_201_CREATED)
+
+    except ValueError as e:
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "ORDER_FAILED",
+                "message": str(e)
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "SERVER_ERROR",
+                "message": str(e)
+            }
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
