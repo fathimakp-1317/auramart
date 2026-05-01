@@ -9,6 +9,8 @@ from .serializers import (
     UpdateOrderStatusSerializer
 )
 from apps.inventory.events import publish_order_completed
+from .checkout_service import process_checkout
+from .serializers import CheckoutSerializer
 import uuid
 
 
@@ -215,3 +217,61 @@ def get_all_orders(request):
             "orders": OrderSerializer(orders, many=True).data
         }
     })
+
+@api_view(["POST"])
+def checkout(request):
+    """
+    Full checkout flow.
+
+    Steps automatically:
+    1. Gets cart from Redis
+    2. Checks stock
+    3. Creates order
+    4. Reduces inventory
+    5. Clears cart
+    6. Publishes RabbitMQ event
+
+    Expects:
+    { "user_id": "uuid" }
+
+    Returns:
+    { order_id, total_amount, status, items }
+    """
+    serializer = CheckoutSerializer(data=request.data)
+
+    if not serializer.is_valid():
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "VALIDATION_ERROR",
+                "message": serializer.errors
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    user_id = serializer.validated_data["user_id"]
+
+    try:
+        order_data = process_checkout(user_id)
+        return Response({
+            "success": True,
+            "data":    order_data
+        }, status=status.HTTP_201_CREATED)
+
+    except ValueError as e:
+        # stock error or empty cart
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "CHECKOUT_FAILED",
+                "message": str(e)
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "error": {
+                "code":    "SERVER_ERROR",
+                "message": str(e)
+            }
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

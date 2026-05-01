@@ -65,3 +65,12 @@ class UpdateOrderStatusSerializer(serializers.Serializer):
             "cancelled",
         ]
     )
+
+class CheckoutSerializer(serializers.Serializer):
+    """
+    Used for the checkout endpoint.
+    Takes user_id and processes their cart.
+    """
+    user_id = serializers.CharField(max_length=255)
+    # we get items FROM the cart automatically
+    # customer doesn't need to send items again

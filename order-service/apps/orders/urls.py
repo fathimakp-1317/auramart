@@ -3,6 +3,11 @@ from . import views
 
 urlpatterns = [
 
+    # POST   /api/v1/orders/checkout/
+    path("checkout/",
+         views.checkout,
+         name="checkout"),
+
     # POST   /api/v1/orders/create/
     path("create/",
          views.create_order,
