@@ -3,7 +3,8 @@ from apps.cart.redis_cart import get_cart, clear_cart
 from apps.inventory.models import Inventory
 from apps.inventory.events import publish_order_completed
 from .models import Order, OrderItem
-
+from apps.orders.tasks import send_order_confirmation_email
+from apps.inventory.tasks import check_low_stock_after_order
 
 def process_checkout(user_id: str) -> dict:
     """
@@ -122,6 +123,21 @@ def process_checkout(user_id: str) -> dict:
     except Exception as e:
         # don't fail the order if RabbitMQ is down
         print(f"RabbitMQ publish failed: {e}")
+    
+    # ── Send Confirmation Email (Background) ──────
+    send_order_confirmation_email.delay(
+        order_id=str(order.id),
+        user_email=f"{user_id}@example.com",
+        total_amount=float(order.total_amount),
+        items=rabbitmq_items
+    )
+
+    # ── Check Stock Levels (Background) ───────────
+    for item in rabbitmq_items:
+        check_low_stock_after_order.delay(
+            product_id=item["product_id"],
+            quantity_sold=item["quantity"]
+        )
 
     return {
         "order_id":     str(order.id),

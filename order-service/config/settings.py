@@ -77,3 +77,37 @@ RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True
+
+# ─── Celery Settings ──────────────────────────────────────
+
+# use Redis as message broker
+CELERY_BROKER_URL = os.getenv(
+    "REDIS_URL",
+    "redis://localhost:6379"
+)
+
+# store task results in Redis
+CELERY_RESULT_BACKEND = os.getenv(
+    "REDIS_URL",
+    "redis://localhost:6379"
+)
+
+# task settings
+CELERY_ACCEPT_CONTENT  = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+# retry failed tasks automatically
+CELERY_TASK_MAX_RETRIES = 3
+CELERY_TASK_RETRY_DELAY = 60
+# wait 60 seconds before retrying
+
+# store task results in database
+CELERY_RESULT_EXTENDED = True
+
+# add to INSTALLED_APPS
+INSTALLED_APPS += [
+    "django_celery_results",
+    "django_celery_beat",
+]
