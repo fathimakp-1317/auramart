@@ -1,19 +1,21 @@
 """
 Celery Tasks for Order Service
 ===============================
-These are background tasks that run
-without blocking the main API.
-
-Each function decorated with @shared_task
-runs in a separate Celery worker process.
+Uses email_service.py for
+all email sending logic.
 """
 
 from celery import shared_task
-from django.core.mail import send_mail
-from django.conf import settings
+from .email_service import (
+    send_order_confirmation,
+    send_low_stock_alert,
+    send_shipping_confirmation,
+    send_payment_failed_email,
+    send_delivery_confirmation
+)
 
 
-# ─── Order Confirmation Email ─────────────────────────────
+# ─── Order Confirmation ───────────────────────────────────
 @shared_task(bind=True, max_retries=3)
 def send_order_confirmation_email(
     self,
@@ -22,198 +24,142 @@ def send_order_confirmation_email(
     total_amount: float,
     items: list
 ):
-    """
-    Send order confirmation email to customer.
-
-    This runs in background so customer
-    gets immediate response from checkout.
-
-    Retries up to 3 times if email fails.
-    """
+    """Send order confirmation in background."""
     try:
-        # build email content
-        items_text = "\n".join([
-            f"- Product: {item['product_id']} "
-            f"x{item['quantity']}"
-            for item in items
-        ])
-
-        message = f"""
-Dear Customer,
-
-Your order has been placed successfully!
-
-Order Details:
-─────────────────
-Order ID:     {order_id}
-Total Amount: ${total_amount}
-
-Items Ordered:
-{items_text}
-
-─────────────────
-Thank you for shopping with ShopSphere!
-
-We will notify you when your order ships.
-
-Best regards,
-ShopSphere Team
-        """
-
-        send_mail(
-            subject=f"Order Confirmed - #{order_id[:8]}",
-            message=message,
-            from_email="orders@shopsphere.com",
-            recipient_list=[user_email],
-            fail_silently=False
+        send_order_confirmation(
+            order_id=order_id,
+            user_email=user_email,
+            total_amount=total_amount,
+            items=items
         )
-
         print(
             f"✅ Confirmation email sent "
             f"for order {order_id}"
         )
         return {
             "status":   "sent",
-            "order_id": order_id,
-            "email":    user_email
+            "order_id": order_id
         }
-
     except Exception as exc:
         print(f"❌ Email failed: {exc}")
-        # retry after 60 seconds
         raise self.retry(exc=exc, countdown=60)
 
 
 # ─── Low Stock Alert ──────────────────────────────────────
 @shared_task(bind=True, max_retries=3)
-def send_low_stock_alert(
+def send_low_stock_alert_task(
     self,
     product_id: str,
     current_quantity: int,
     vendor_email: str
 ):
-    """
-    Send alert to vendor when product
-    stock falls below 10.
-
-    Triggered automatically after
-    each order reduces inventory.
-    """
+    """Send low stock alert in background."""
     try:
-        message = f"""
-Dear Vendor,
-
-⚠️ LOW STOCK ALERT
-
-Your product needs restocking:
-
-Product ID:       {product_id}
-Current Stock:    {current_quantity} items remaining
-Recommended:      Restock to at least 50 items
-
-Please restock soon to avoid
-missing future sales.
-
-─────────────────────────────
-ShopSphere Inventory System
-        """
-
-        send_mail(
-            subject=(
-                f"⚠️ Low Stock Alert - "
-                f"Product {product_id[:8]}"
-            ),
-            message=message,
-            from_email="inventory@shopsphere.com",
-            recipient_list=[vendor_email],
-            fail_silently=False
+        send_low_stock_alert(
+            product_id=product_id,
+            current_quantity=current_quantity,
+            vendor_email=vendor_email
         )
-
         print(
             f"✅ Low stock alert sent "
-            f"for product {product_id}"
+            f"for {product_id}"
         )
         return {
             "status":     "sent",
-            "product_id": product_id,
-            "quantity":   current_quantity
+            "product_id": product_id
         }
-
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
 
-# ─── Order Status Update Email ────────────────────────────
+# ─── Shipping Confirmation ────────────────────────────────
 @shared_task(bind=True, max_retries=3)
-def send_order_status_update(
+def send_shipping_confirmation_email(
     self,
     order_id: str,
     user_email: str,
-    new_status: str
+    tracking_number: str = None
 ):
-    """
-    Send email when order status changes.
-    e.g. pending → shipped → delivered
-    """
-    status_messages = {
-        "paid":      "Your payment was confirmed!",
-        "shipped":   "Your order is on the way!",
-        "delivered": "Your order has been delivered!",
-        "cancelled": "Your order has been cancelled."
-    }
-
-    message_text = status_messages.get(
-        new_status,
-        f"Your order status: {new_status}"
-    )
-
+    """Send shipping update in background."""
     try:
-        send_mail(
-            subject=(
-                f"Order Update - "
-                f"#{order_id[:8]}"
-            ),
-            message=f"""
-Dear Customer,
-
-{message_text}
-
-Order ID: {order_id}
-Status:   {new_status.upper()}
-
-Thank you for shopping with ShopSphere!
-            """,
-            from_email="orders@shopsphere.com",
-            recipient_list=[user_email],
-            fail_silently=False
+        send_shipping_confirmation(
+            order_id=order_id,
+            user_email=user_email,
+            tracking_number=tracking_number
         )
-
+        print(
+            f"✅ Shipping email sent "
+            f"for order {order_id}"
+        )
         return {
-            "status":     "sent",
-            "order_id":   order_id,
-            "new_status": new_status
+            "status":   "sent",
+            "order_id": order_id
         }
-
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
 
-# ─── Generate Daily Sales Report ──────────────────────────
+# ─── Payment Failed ───────────────────────────────────────
+@shared_task(bind=True, max_retries=3)
+def send_payment_failed_notification(
+    self,
+    order_id: str,
+    user_email: str,
+    total_amount: float
+):
+    """Send payment failure notice in background."""
+    try:
+        send_payment_failed_email(
+            order_id=order_id,
+            user_email=user_email,
+            total_amount=total_amount
+        )
+        print(
+            f"✅ Payment failed email sent "
+            f"for order {order_id}"
+        )
+        return {
+            "status":   "sent",
+            "order_id": order_id
+        }
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+
+# ─── Delivery Confirmation ────────────────────────────────
+@shared_task(bind=True, max_retries=3)
+def send_delivery_confirmation_email(
+    self,
+    order_id: str,
+    user_email: str
+):
+    """Send delivery confirmation in background."""
+    try:
+        send_delivery_confirmation(
+            order_id=order_id,
+            user_email=user_email
+        )
+        print(
+            f"✅ Delivery email sent "
+            f"for order {order_id}"
+        )
+        return {
+            "status":   "sent",
+            "order_id": order_id
+        }
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+
+# ─── Daily Sales Report ───────────────────────────────────
 @shared_task
 def generate_daily_sales_report():
-    """
-    Generate daily sales summary.
-    Scheduled to run every day at midnight.
-
-    This is a periodic task —
-    runs automatically on schedule.
-    """
+    """Generate daily sales summary."""
     from apps.orders.models import Order
     from django.utils import timezone
     from datetime import timedelta
 
-    # get today's orders
-    today = timezone.now().date()
+    today     = timezone.now().date()
     yesterday = today - timedelta(days=1)
 
     orders = Order.objects.filter(
@@ -222,8 +168,7 @@ def generate_daily_sales_report():
     )
 
     total_revenue = sum(
-        float(o.total_amount)
-        for o in orders
+        float(o.total_amount) for o in orders
     )
     total_orders = orders.count()
 
@@ -233,8 +178,7 @@ def generate_daily_sales_report():
         "total_revenue": total_revenue,
         "average_order": (
             total_revenue / total_orders
-            if total_orders > 0
-            else 0
+            if total_orders > 0 else 0
         )
     }
 

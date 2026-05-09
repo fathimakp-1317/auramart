@@ -140,11 +140,8 @@ def get_order(request, order_id):
 @api_view(["PATCH"])
 def update_order_status(request, order_id):
     """
-    Update the status of an order.
-    Example: pending → paid → shipped → delivered
-
-    Expects:
-    { "status": "shipped" }
+    Update order status and send
+    appropriate email notification.
     """
     order = get_object_or_404(Order, id=order_id)
 
@@ -161,14 +158,49 @@ def update_order_status(request, order_id):
             }
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    order.status = serializer.validated_data["status"]
+    new_status    = serializer.validated_data["status"]
+    old_status    = order.status
+    order.status  = new_status
     order.save()
+
+    # send email based on new status
+    user_email = f"{order.user_id}@example.com"
+    # in real app get email from auth service
+
+    from apps.orders.tasks import (
+        send_shipping_confirmation_email,
+        send_delivery_confirmation_email,
+        send_payment_failed_notification
+    )
+
+    if new_status == "shipped":
+        send_shipping_confirmation_email.delay(
+            order_id=str(order.id),
+            user_email=user_email
+        )
+
+    elif new_status == "delivered":
+        send_delivery_confirmation_email.delay(
+            order_id=str(order.id),
+            user_email=user_email
+        )
+
+    elif new_status == "cancelled":
+        send_payment_failed_notification.delay(
+            order_id=str(order.id),
+            user_email=user_email,
+            total_amount=float(order.total_amount)
+        )
 
     return Response({
         "success": True,
-        "data":    OrderSerializer(order).data
+        "data": {
+            "order_id":     str(order.id),
+            "old_status":   old_status,
+            "new_status":   new_status,
+            "email_sent":   True
+        }
     })
-
 
 # ─── Cancel Order ─────────────────────────────────────────
 @api_view(["PATCH"])

@@ -1,0 +1,25 @@
+Dear Vendor,
+
+⚠️  LOW STOCK ALERT
+
+─────────────────────────────────
+PRODUCT NEEDS RESTOCKING
+─────────────────────────────────
+Product ID:    {product_id}
+Current Stock: {current_quantity} items
+Alert Level:   Below 10 units
+─────────────────────────────────
+
+ACTION REQUIRED:
+Please restock this product soon
+to avoid missing sales.
+
+Recommended stock level: 50+ units
+
+Restock your product at:
+{frontend_url}/vendor/inventory
+
+─────────────────────────────────
+ShopSphere Inventory System
+support@shopsphere.com
+─────────────────────────────────

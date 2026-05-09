@@ -44,8 +44,14 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "BACKEND": (
+            "django.template.backends"
+            ".django.DjangoTemplates"
+        ),
+        "DIRS": [
+            BASE_DIR / "templates"
+            # tells Django where templates are
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -111,3 +117,40 @@ INSTALLED_APPS += [
     "django_celery_results",
     "django_celery_beat",
 ]
+
+# ─── Email Settings ───────────────────────────────────────
+
+# for development — prints emails to terminal
+# change to real SMTP in production
+EMAIL_BACKEND = (
+    "django.core.mail.backends"
+    ".console.EmailBackend"
+)
+# console backend means emails print
+# in your terminal instead of sending
+# perfect for development and testing
+
+# these are used when sending real emails
+EMAIL_HOST          = os.getenv(
+    "EMAIL_HOST", "smtp.gmail.com"
+)
+EMAIL_PORT          = int(os.getenv(
+    "EMAIL_PORT", "587"
+))
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = os.getenv(
+    "EMAIL_HOST_USER", ""
+)
+EMAIL_HOST_PASSWORD = os.getenv(
+    "EMAIL_HOST_PASSWORD", ""
+)
+DEFAULT_FROM_EMAIL  = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "noreply@shopsphere.com"
+)
+
+# frontend URL for email links
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:3000"
+)
