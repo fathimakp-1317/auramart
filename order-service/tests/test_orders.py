@@ -283,3 +283,43 @@ class CheckoutTest(TestCase):
             content_type="application/json"
         )
         self.assertEqual(response.status_code, 400)
+
+    # ... inside class CheckoutTest or OrderAPITest ...
+
+    def test_get_all_orders(self):
+        """GET /api/v1/orders/all/ returns all orders."""
+        OrderFactory()
+        OrderFactory()
+        OrderFactory()
+
+        response = self.client.get("/api/v1/orders/all/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertGreaterEqual(data["data"]["count"], 3)
+
+    def test_create_order_without_user_id(self):
+        """Creating order without user_id returns 400."""
+        response = self.client.post(
+            "/api/v1/orders/create/",
+            data=json.dumps({
+                "items": [{
+                    "product_id": "prod-001",
+                    "vendor_id":  "vendor-001",
+                    "quantity":   1,
+                    "unit_price": 10.00
+                }]
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_place_order_without_user_id(self):
+        """Place order without user_id returns 400."""
+        # Note: Ensure /place/ exists in urls.py, otherwise change to /create/ or /checkout/
+        response = self.client.post(
+            "/api/v1/orders/place/",
+            data=json.dumps({}),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)

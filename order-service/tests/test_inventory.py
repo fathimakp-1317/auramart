@@ -108,6 +108,7 @@ class InventoryAPITest(TestCase):
             data["data"]["is_available"]
         )
 
+
     def test_check_stock_unavailable(self):
         """Stock check returns unavailable when low."""
         InventoryFactory(
@@ -166,3 +167,69 @@ class InventoryAPITest(TestCase):
         self.assertEqual(
             data["data"]["count"], 2
         )
+
+
+    def test_reduce_inventory(self):
+        """Reduce inventory endpoint works."""
+        inv = InventoryFactory(
+            product_id="reduce-prod-001",
+            quantity=10,
+            version=0
+        )
+        response = self.client.patch(
+            f"/api/v1/inventory/{inv.product_id}/reduce/",
+            data=json.dumps({
+                "quantity":        3,
+                "current_version": 0
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["data"]["new_quantity"], 7)
+
+    def test_reduce_inventory_version_conflict(self):
+        """Wrong version returns 409 conflict."""
+        inv = InventoryFactory(
+            product_id="conflict-prod-001",
+            quantity=10,
+            version=5
+        )
+        response = self.client.patch(
+            f"/api/v1/inventory/{inv.product_id}/reduce/",
+            data=json.dumps({
+                "quantity":        1,
+                "current_version": 0  # wrong version — should be 5
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 409)
+
+    def test_reduce_inventory_insufficient_stock(self):
+        """Reducing more than stock fails."""
+        inv = InventoryFactory(
+            product_id="nostock-prod-001",
+            quantity=2,
+            version=0
+        )
+        response = self.client.patch(
+            f"/api/v1/inventory/{inv.product_id}/reduce/",
+            data=json.dumps({
+                "quantity":        10,
+                "current_version": 0
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_get_all_inventory(self):
+        """GET /api/v1/inventory/all/ returns all."""
+        InventoryFactory(product_id="all-prod-1")
+        InventoryFactory(product_id="all-prod-2")
+
+        response = self.client.get("/api/v1/inventory/all/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertGreaterEqual(data["data"]["count"], 2)    
+
+    

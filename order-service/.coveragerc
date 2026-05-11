@@ -1,0 +1,23 @@
+[run]
+source = apps
+omit =
+    # skip these files
+    */migrations/*
+    */tests/*
+    */__init__.py
+    */apps.py
+    */admin.py
+    venv/*
+    config/*
+
+[report]
+# show lines not covered
+show_missing = True
+skip_covered = False
+
+# minimum coverage required
+fail_under = 80
+
+[html]
+# folder for HTML report
+directory = coverage_report
