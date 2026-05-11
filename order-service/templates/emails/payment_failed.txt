@@ -1,0 +1,24 @@
+Dear Customer,
+
+Unfortunately your payment failed. ❌
+
+─────────────────────────────────
+PAYMENT FAILED
+─────────────────────────────────
+Order ID: {order_id}
+Amount:   ${total_amount}
+Status:   PAYMENT FAILED
+─────────────────────────────────
+
+WHAT TO DO:
+1. Check your card details
+2. Try a different payment method
+3. Contact your bank
+
+Try again at:
+{frontend_url}/orders/{order_id}/pay
+
+─────────────────────────────────
+Need help? Contact us at:
+support@shopsphere.com
+─────────────────────────────────

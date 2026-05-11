@@ -1,0 +1,35 @@
+Dear Customer,
+
+Thank you for your order! 🎉
+
+─────────────────────────────────
+ORDER CONFIRMATION
+─────────────────────────────────
+Order ID:     {order_id}
+Date:         {order_date}
+Total Amount: ${total_amount}
+Status:       CONFIRMED
+─────────────────────────────────
+
+ITEMS ORDERED:
+{items_list}
+
+─────────────────────────────────
+WHAT HAPPENS NEXT?
+─────────────────────────────────
+1. We are processing your order
+2. You will receive a shipping
+   confirmation soon
+3. Track your order at:
+   {frontend_url}/orders/{order_id}
+
+─────────────────────────────────
+Need help? Contact us at:
+support@shopsphere.com
+─────────────────────────────────
+
+Thank you for shopping with
+ShopSphere! 🛒
+
+Best regards,
+The ShopSphere Team
