@@ -1,0 +1,19 @@
+Dear Customer,
+
+Great news! Your order is on its way! 🚚
+
+─────────────────────────────────
+SHIPPING CONFIRMATION
+─────────────────────────────────
+Order ID:      {order_id}
+Status:        SHIPPED
+Estimated:     3-5 business days
+─────────────────────────────────
+
+Track your order:
+{frontend_url}/orders/{order_id}
+
+─────────────────────────────────
+ShopSphere Team
+support@shopsphere.com
+─────────────────────────────────
