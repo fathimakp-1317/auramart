@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: shopsphere_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: shopsphere
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: shopsphere_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: shopsphere_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: shopsphere_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+
+  recommendation_service:
+    build: .
+    container_name: shopsphere_recommendation_service
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - elasticsearch
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/shopsphere
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - "5000:5000"
+
+  nginx:
+    image: nginx:latest
+    container_name: shopsphere_nginx
+    restart: always
+    depends_on:
+      - recommendation_service
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+volumes:
+  postgres_data:
