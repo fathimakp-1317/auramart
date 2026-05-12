@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0">
+    <title>ShopSphere — My Cart</title>
+    <link rel="stylesheet"
+          href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ─── Navigation ──────────────────────────── -->
+<nav>
+    <a href="#" class="logo">
+        Shop<span>Sphere</span>
+    </a>
+    <ul>
+        <li>
+            <a href="cart.html">
+                🛒 Cart
+            </a>
+        </li>
+        <li>
+            <a href="orders.html">
+                📦 Orders
+            </a>
+        </li>
+        <li>
+            <a href="checkout.html">
+                💳 Checkout
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- ─── Main Content ────────────────────────── -->
+<div class="container">
+
+    <h1 class="page-title">🛒 My Cart</h1>
+
+    <!-- User ID Section -->
+    <div class="card">
+        <div class="form-group">
+            <label>Your User ID:</label>
+            <div style="display:flex; gap:0.5rem;">
+                <input
+                    type="text"
+                    id="userIdInput"
+                    placeholder="Enter your user ID"
+                    style="flex:1"
+                >
+                <button
+                    class="btn btn-secondary"
+                    onclick="setUser()"
+                >
+                    Set User
+                </button>
+            </div>
+        </div>
+        <p style="color:#777; font-size:0.85rem">
+            Current User:
+            <strong id="currentUser">
+                demo-user-001
+            </strong>
+        </p>
+    </div>
+
+    <!-- Add Demo Item Section -->
+    <div class="card">
+        <h3 style="margin-bottom:1rem">
+            Add Test Item to Cart
+        </h3>
+        <div style="display:flex; gap:1rem;
+                    flex-wrap:wrap">
+            <div class="form-group"
+                 style="flex:1; min-width:150px">
+                <label>Product ID:</label>
+                <input
+                    type="text"
+                    id="productId"
+                    value="prod-001"
+                >
+            </div>
+            <div class="form-group"
+                 style="width:80px">
+                <label>Quantity:</label>
+                <input
+                    type="number"
+                    id="quantity"
+                    value="1"
+                    min="1"
+                >
+            </div>
+            <div class="form-group"
+                 style="width:100px">
+                <label>Price ($):</label>
+                <input
+                    type="number"
+                    id="price"
+                    value="29.99"
+                    step="0.01"
+                >
+            </div>
+            <div class="form-group"
+                 style="align-self:flex-end">
+                <button
+                    class="btn btn-primary"
+                    onclick="addItem()"
+                >
+                    Add to Cart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Items -->
+    <div class="grid-2">
+        <!-- Left: Items List -->
+        <div>
+            <div id="cartItems">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading cart...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Cart Summary -->
+        <div>
+            <div class="cart-summary" id="cartSummary">
+                <h2>Order Summary</h2>
+                <hr style="border-color:#fff3;
+                           margin:1rem 0">
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:0.5rem">
+                    <span>Items:</span>
+                    <span id="itemCount">0</span>
+                </div>
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:0.5rem">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:1rem">
+                    <span>Shipping:</span>
+                    <span style="color:#2ecc71">
+                        FREE
+                    </span>
+                </div>
+                <hr style="border-color:#fff3;
+                           margin:1rem 0">
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:1.5rem">
+                    <span>Total:</span>
+                    <span class="total"
+                          id="cartTotal">
+                        $0.00
+                    </span>
+                </div>
+                <a href="checkout.html">
+                    <button
+                        class="btn btn-success"
+                        style="width:100%;
+                               padding:0.8rem"
+                    >
+                        Proceed to Checkout →
+                    </button>
+                </a>
+                <button
+                    class="btn"
+                    onclick="clearEntireCart()"
+                    style="width:100%;
+                           margin-top:0.5rem;
+                           background:#e74c3c;
+                           color:#fff"
+                >
+                    Clear Cart
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/cart.js"></script>
+</body>
+</html>

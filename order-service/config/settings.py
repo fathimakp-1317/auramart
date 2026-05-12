@@ -83,6 +83,7 @@ RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # ─── Celery Settings ──────────────────────────────────────
 
@@ -154,3 +155,13 @@ FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
     "http://localhost:3000"
 )
+
+# static files
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "frontend")
+]
+
+# fixes emoji encoding issues
+DEFAULT_CHARSET = "utf-8"

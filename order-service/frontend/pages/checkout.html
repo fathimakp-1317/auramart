@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0">
+    <title>ShopSphere — Checkout</title>
+    <link rel="stylesheet"
+          href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ─── Navigation ──────────────────────────── -->
+<nav>
+    <a href="#" class="logo">
+        Shop<span>Sphere</span>
+    </a>
+    <ul>
+        <li><a href="cart.html">🛒 Cart</a></li>
+        <li><a href="orders.html">📦 Orders</a></li>
+        <li>
+            <a href="checkout.html">
+                💳 Checkout
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- ─── Main Content ────────────────────────── -->
+<div class="container">
+
+    <h1 class="page-title">💳 Checkout</h1>
+
+    <div class="grid-2">
+
+        <!-- Left: Order Details -->
+        <div>
+
+            <!-- Cart Summary -->
+            <div class="card">
+                <h2 style="margin-bottom:1rem">
+                    Order Items
+                </h2>
+                <div id="checkoutItems">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading your cart...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Details -->
+            <div class="card">
+                <h2 style="margin-bottom:1rem">
+                    Delivery Details
+                </h2>
+                <div class="form-group">
+                    <label>Full Name:</label>
+                    <input
+                        type="text"
+                        id="fullName"
+                        placeholder="John Doe"
+                    >
+                </div>
+                <div class="form-group">
+                    <label>Email Address:</label>
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="john@example.com"
+                    >
+                </div>
+                <div class="form-group">
+                    <label>Delivery Address:</label>
+                    <input
+                        type="text"
+                        id="address"
+                        placeholder="123 Main St, City"
+                    >
+                </div>
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        placeholder="+1 234 567 8900"
+                    >
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Payment Summary -->
+        <div>
+            <div class="cart-summary">
+                <h2>Payment Summary</h2>
+                <hr style="border-color:#fff3;
+                           margin:1rem 0">
+
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:0.5rem">
+                    <span>Items Total:</span>
+                    <span id="itemsTotal">$0.00</span>
+                </div>
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:0.5rem">
+                    <span>Shipping:</span>
+                    <span style="color:#2ecc71">
+                        FREE
+                    </span>
+                </div>
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:0.5rem">
+                    <span>Tax (10%):</span>
+                    <span id="taxAmount">$0.00</span>
+                </div>
+
+                <hr style="border-color:#fff3;
+                           margin:1rem 0">
+
+                <div style="display:flex;
+                            justify-content:space-between;
+                            margin-bottom:1.5rem">
+                    <span>Grand Total:</span>
+                    <span class="total"
+                          id="grandTotal">
+                        $0.00
+                    </span>
+                </div>
+
+                <!-- Place Order Button -->
+                <button
+                    class="btn btn-success"
+                    style="width:100%;
+                           padding:1rem;
+                           font-size:1.1rem"
+                    onclick="placeOrder()"
+                    id="placeOrderBtn"
+                >
+                    Place Order 🛒
+                </button>
+
+                <p style="color:#aaa;
+                          font-size:0.8rem;
+                          margin-top:1rem;
+                          text-align:center">
+                    🔒 Secure checkout powered by
+                    ShopSphere
+                </p>
+            </div>
+
+            <!-- Order Success Message -->
+            <div id="orderSuccess"
+                 style="display:none">
+                <div class="card"
+                     style="border-left:4px solid
+                            #27ae60;
+                            text-align:center">
+                    <div style="font-size:3rem;
+                                margin-bottom:1rem">
+                        ✅
+                    </div>
+                    <h2 style="color:#27ae60;
+                               margin-bottom:0.5rem">
+                        Order Placed!
+                    </h2>
+                    <p style="margin-bottom:1rem;
+                              color:#555">
+                        Your order has been
+                        successfully placed.
+                    </p>
+                    <p style="margin-bottom:1rem">
+                        Order ID:
+                        <strong id="newOrderId">
+                        </strong>
+                    </p>
+                    <a href="orders.html">
+                        <button
+                            class="btn btn-primary"
+                        >
+                            View My Orders →
+                        </button>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    // load cart on page load
+    document.addEventListener(
+        "DOMContentLoaded",
+        loadCheckoutCart
+    );
+
+    async function loadCheckoutCart() {
+        try {
+            const response = await CartAPI.getCart();
+
+            if (
+                response.success &&
+                response.data.items.length > 0
+            ) {
+                displayCheckoutItems(response.data);
+            } else {
+                document.getElementById(
+                    "checkoutItems"
+                ).innerHTML = `
+                    <div class="alert alert-info">
+                        Your cart is empty.
+                        <a href="cart.html">
+                            Add items first
+                        </a>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById(
+                "checkoutItems"
+            ).innerHTML = `
+                <div class="alert alert-error">
+                    Cannot connect to server.
+                </div>
+            `;
+        }
+    }
+
+    function displayCheckoutItems(cart) {
+        let html = "";
+        cart.items.forEach(function(item) {
+            html += `
+                <div class="cart-item">
+                    <div>
+                        <strong>
+                            ${item.product_id}
+                        </strong>
+                        <p style="color:#777;
+                                  font-size:0.9rem">
+                            ${item.quantity} x
+                            ${formatPrice(item.price)}
+                        </p>
+                    </div>
+                    <strong>
+                        ${formatPrice(item.subtotal)}
+                    </strong>
+                </div>
+            `;
+        });
+
+        document.getElementById(
+            "checkoutItems"
+        ).innerHTML = html;
+
+        // calculate totals
+        const subtotal = cart.total || 0;
+        const tax      = subtotal * 0.10;
+        const total    = subtotal + tax;
+
+        document.getElementById("itemsTotal")
+            .textContent = formatPrice(subtotal);
+        document.getElementById("taxAmount")
+            .textContent = formatPrice(tax);
+        document.getElementById("grandTotal")
+            .textContent = formatPrice(total);
+    }
+
+    async function placeOrder() {
+        // validate form
+        const name    = document.getElementById(
+            "fullName"
+        ).value.trim();
+        const email   = document.getElementById(
+            "email"
+        ).value.trim();
+        const address = document.getElementById(
+            "address"
+        ).value.trim();
+
+        if (!name || !email || !address) {
+            showAlert(
+                "Please fill in all delivery details",
+                "error"
+            );
+            return;
+        }
+
+        // disable button
+        const btn = document.getElementById(
+            "placeOrderBtn"
+        );
+        btn.disabled    = true;
+        btn.textContent = "Placing Order...";
+
+        try {
+            const response = await OrderAPI.checkout();
+
+            if (response.success) {
+                // show success message
+                document.getElementById(
+                    "orderSuccess"
+                ).style.display = "block";
+
+                document.getElementById(
+                    "newOrderId"
+                ).textContent = response.data.order_id;
+
+                // hide checkout button
+                btn.style.display = "none";
+
+                showAlert(
+                    "Order placed successfully! 🎉",
+                    "success"
+                );
+
+            } else {
+                showAlert(
+                    `Order failed: ${
+                        response.error?.message
+                        || "Unknown error"
+                    }`,
+                    "error"
+                );
+                btn.disabled    = false;
+                btn.textContent = "Place Order 🛒";
+            }
+
+        } catch (error) {
+            showAlert(
+                "Cannot connect to server",
+                "error"
+            );
+            btn.disabled    = false;
+            btn.textContent = "Place Order 🛒";
+        }
+    }
+</script>
+</body>
+</html>
