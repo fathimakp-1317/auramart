@@ -1,0 +1,48 @@
+version: "3.9"
+
+# This is just for testing order-service alone
+# The full docker-compose.yml is in infra/
+# and is managed by Member 4
+
+services:
+
+  order-service:
+    build: .
+    ports:
+      - "5003:5003"
+    environment:
+      SECRET_KEY:      django-insecure-dev-key
+      DEBUG:           "True"
+      DB_HOST:         postgres-c
+      DB_NAME:         shopsphere_orders
+      DB_USER:         postgres
+      DB_PASSWORD:     password
+      REDIS_URL:       redis://redis:6379
+      REDIS_HOST:      redis
+      RABBITMQ_URL:    amqp://guest:guest@rabbitmq:5672/
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      FRONTEND_URL:    http://localhost:5003
+    depends_on:
+      - postgres-c
+      - redis
+    volumes:
+      - .:/app
+
+  postgres-c:
+    image: postgres:15
+    environment:
+      POSTGRES_DB:       shopsphere_orders
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:

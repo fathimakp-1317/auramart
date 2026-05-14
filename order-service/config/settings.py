@@ -6,12 +6,16 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY",
-             "django-insecure-change-this")
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-change-this"
+)
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS", "*"
+).split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -50,7 +54,6 @@ TEMPLATES = [
         ),
         "DIRS": [
             BASE_DIR / "templates"
-            # tells Django where templates are
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -64,78 +67,76 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME":     "shopsphere_orders",
-        "USER":     "postgres",
-        "PASSWORD": "password",
-        "HOST":     "localhost",
-        "PORT":     "5432",
-    }
-}
+# ─── Database ─────────────────────────────────
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-REDIS_URL    = os.getenv("REDIS_URL",
-               "redis://localhost:6379")
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL)
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME":     os.getenv(
+                "DB_NAME", "shopsphere_orders"
+            ),
+            "USER":     os.getenv(
+                "DB_USER", "postgres"
+            ),
+            "PASSWORD": os.getenv(
+                "DB_PASSWORD", "password"
+            ),
+            "HOST":     os.getenv(
+                "DB_HOST", "localhost"
+            ),
+            "PORT":     os.getenv(
+                "DB_PORT", "5432"
+            ),
+        }
+    }
+
+REDIS_URL    = os.getenv(
+    "REDIS_URL", "redis://localhost:6379"
+)
 STRIPE_KEY   = os.getenv("STRIPE_SECRET_KEY")
 RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 
-STATIC_URL = "/static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# ─── Celery Settings ──────────────────────────────────────
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# use Redis as message broker
+# ─── Celery Settings ──────────────────────────
 CELERY_BROKER_URL = os.getenv(
-    "REDIS_URL",
-    "redis://localhost:6379"
+    "REDIS_URL", "redis://localhost:6379"
 )
-
-# store task results in Redis
 CELERY_RESULT_BACKEND = os.getenv(
-    "REDIS_URL",
-    "redis://localhost:6379"
+    "REDIS_URL", "redis://localhost:6379"
 )
-
-# task settings
-CELERY_ACCEPT_CONTENT  = ["json"]
-CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT    = ["json"]
+CELERY_TASK_SERIALIZER   = "json"
 CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = "UTC"
+CELERY_TIMEZONE          = "UTC"
+CELERY_TASK_MAX_RETRIES  = 3
+CELERY_TASK_RETRY_DELAY  = 60
+CELERY_RESULT_EXTENDED   = True
 
-# retry failed tasks automatically
-CELERY_TASK_MAX_RETRIES = 3
-CELERY_TASK_RETRY_DELAY = 60
-# wait 60 seconds before retrying
-
-# store task results in database
-CELERY_RESULT_EXTENDED = True
-
-# add to INSTALLED_APPS
 INSTALLED_APPS += [
     "django_celery_results",
     "django_celery_beat",
 ]
 
-# ─── Email Settings ───────────────────────────────────────
-
-# for development — prints emails to terminal
-# change to real SMTP in production
+# ─── Email Settings ───────────────────────────
 EMAIL_BACKEND = (
     "django.core.mail.backends"
     ".console.EmailBackend"
 )
-# console backend means emails print
-# in your terminal instead of sending
-# perfect for development and testing
-
-# these are used when sending real emails
-EMAIL_HOST          = os.getenv(
+EMAIL_HOST = os.getenv(
     "EMAIL_HOST", "smtp.gmail.com"
 )
-EMAIL_PORT          = int(os.getenv(
+EMAIL_PORT = int(os.getenv(
     "EMAIL_PORT", "587"
 ))
 EMAIL_USE_TLS       = True
@@ -149,19 +150,18 @@ DEFAULT_FROM_EMAIL  = os.getenv(
     "DEFAULT_FROM_EMAIL",
     "noreply@shopsphere.com"
 )
-
-# frontend URL for email links
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
     "http://localhost:3000"
 )
 
-# static files
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# ─── Static Files ─────────────────────────────
+STATIC_URL       = "/static/"
+STATIC_ROOT      = os.path.join(
+    BASE_DIR, "staticfiles"
+)
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "frontend")
 ]
 
-# fixes emoji encoding issues
 DEFAULT_CHARSET = "utf-8"
