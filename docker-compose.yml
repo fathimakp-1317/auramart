@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+
+  auth-service:
+    build: .
+    ports:
+      - "5000:5000"
+
+    environment:
+      DATABASE_URL: postgresql://postgres:password@host.docker.internal:5432/shopsphere_auth
+      SECRET_KEY: secret123
+
+    restart: always
