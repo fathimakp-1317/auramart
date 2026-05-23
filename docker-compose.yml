@@ -1,14 +1,251 @@
-version: "3.9"
+# ShopSphere — docker-compose.yml
+# Local development stack — all services + infrastructure
+#
+# Usage:
+#   cp .env.example .env          # fill in secrets
+#   docker compose up --build
+#
+# Services will be available at http://localhost (via nginx gateway)
 
 services:
 
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:15.10
+    container_name: shopsphere_postgres
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB:       shopsphere
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d shopsphere"]
+      interval: 5s
+      timeout:  5s
+      retries:  10
+
+  redis:
+    image: redis:7.4
+    container_name: shopsphere_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:     ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout:  3s
+      retries:  10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: shopsphere_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Management UI: http://localhost:15672 (guest/guest)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test:     ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout:  5s
+      retries:  10
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    container_name: shopsphere_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:     ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 10s
+      timeout:  10s
+      retries:  20
+
+  # ── Application Services ────────────────────────────────────────────────────
+
   auth-service:
-    build: .
+    build: ./auth-service
     ports:
       - "5000:5000"
-
     environment:
-      DATABASE_URL: postgresql://postgres:password@host.docker.internal:5432/shopsphere_auth
-      SECRET_KEY: secret123
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/shopsphere
+      JWT_SECRET:   ${JWT_SECRET:-change-me-before-deploy}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
 
-    restart: always
+  product-service:
+    build: ./product-service
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/shopsphere
+      JWT_SECRET:         ${JWT_SECRET:-change-me-before-deploy}
+      ELASTICSEARCH_URL:  http://elasticsearch:9200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    restart: on-failure
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8001:8000"
+    environment:
+      DB_NAME:             shopsphere
+      DB_USER:             ${POSTGRES_USER:-admin}
+      DB_PASSWORD:         ${POSTGRES_PASSWORD:-admin}
+      DB_HOST:             postgres
+      DB_PORT:             "5432"
+      DJANGO_SECRET_KEY:   ${DJANGO_SECRET_KEY:-django-insecure-change-me-in-production}
+      JWT_SECRET:          ${JWT_SECRET:-change-me-before-deploy}
+      PRODUCT_SERVICE_URL: http://product-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  cart-service:
+    build: ./cart-service
+    ports:
+      - "8002:8000"
+    environment:
+      JWT_SECRET:          ${JWT_SECRET:-change-me-before-deploy}
+      PRODUCT_SERVICE_URL: http://product-service:8000
+      ORDER_SERVICE_URL:   http://order-service:8000
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  search-service:
+    build: ./search-service
+    ports:
+      - "8003:8000"
+    environment:
+      JWT_SECRET:        ${JWT_SECRET:-change-me-before-deploy}
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: on-failure
+
+  recommendation-service:
+    build: ./recommendation-service
+    ports:
+      - "8004:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-before-deploy}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  home-service:
+    build: ./home-service
+    ports:
+      - "8006:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-before-deploy}
+    depends_on:
+      product-service:
+        condition: service_started
+      recommendation-service:
+        condition: service_started
+    restart: on-failure
+
+  analytics-service:
+    build: ./analytics-service
+    ports:
+      - "8009:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-before-deploy}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      JWT_SECRET:      ${JWT_SECRET:-change-me-before-deploy}
+      EMAIL_ADDRESS:   ${EMAIL_ADDRESS:-}
+      EMAIL_PASSWORD:  ${EMAIL_PASSWORD:-}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  notification-api:
+    build: ./notification-api
+    ports:
+      - "8007:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-before-deploy}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  frontend:
+    build: ./frontend
+    restart: on-failure
+
+  gateway:
+    image: nginx:1.27
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - auth-service
+      - product-service
+      - order-service
+      - cart-service
+      - search-service
+      - recommendation-service
+      - home-service
+      - analytics-service
+      - notification-api
+    restart: on-failure
+
+
+  # ── Data Seeder (on-demand only, not part of main stack) ──────────────────
+  seeder:
+    build: ./seeder
+    profiles: ["tools"]
+    environment:
+      ES_URL: http://elasticsearch:9200
+      DB_URL:  postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@postgres:5432/shopsphere
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  es_data:

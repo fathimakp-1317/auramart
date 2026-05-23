@@ -1,0 +1,87 @@
+# Nginx Ingress Controller — routes external traffic into the cluster.
+# Install the controller first:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.0/deploy/static/provider/cloud/deploy.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shopsphere-ingress
+  namespace: shopsphere
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target:         /$2
+    nginx.ingress.kubernetes.io/proxy-body-size:        "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout:  "10"
+    nginx.ingress.kubernetes.io/proxy-read-timeout:     "60"
+    nginx.ingress.kubernetes.io/enable-cors:            "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods:     "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers:     "Authorization, Content-Type"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: shopsphere.local
+      http:
+        paths:
+          - path: /auth(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 5000
+          - path: /products(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: product-service
+                port:
+                  number: 8000
+          - path: /orders(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8000
+          - path: /cart(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: cart-service
+                port:
+                  number: 8000
+          - path: /search(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: search-service
+                port:
+                  number: 8000
+          - path: /recommend(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: recommendation-service
+                port:
+                  number: 8000
+          - path: /home(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: home-service
+                port:
+                  number: 8000
+          - path: /notifications(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-api
+                port:
+                  number: 8000
+          - path: /analytics(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 8000

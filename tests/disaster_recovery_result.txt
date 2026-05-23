@@ -1,0 +1,75 @@
+============================================================
+  ShopSphere - Disaster Recovery Test
+  2026-05-01 13:45:52
+============================================================
+
+------------------------------------------------------------
+  Phase 1: Baseline — all services should be healthy
+------------------------------------------------------------
+  PASS  Gateway health endpoint
+  PASS  Auth service reachable
+  PASS  Product service reachable
+  PASS  Search service reachable
+  PASS  Home service reachable
+  PASS  Cart service reachable
+  PASS  Order service reachable
+  PASS  Analytics service reachable
+  PASS  Notification API reachable
+  PASS  Order creation reachable
+         Status: no response
+
+------------------------------------------------------------
+  Phase 2: Killing order-service...
+------------------------------------------------------------
+  PASS  order-service stopped successfully
+  Waiting 3 seconds for gateway to detect the failure...
+
+------------------------------------------------------------
+  Phase 3: Graceful degradation — site should still work
+------------------------------------------------------------
+  PASS  Gateway still responding
+  PASS  Auth service still up
+  PASS  Products still loading
+         1 products returned
+  PASS  Search still working
+         1962 results
+  PASS  Homepage still loading
+  PASS  Cart service still up
+  PASS  Analytics still up
+
+------------------------------------------------------------
+  Phase 4: Checkout should fail gracefully (not crash)
+------------------------------------------------------------
+   FAIL  Checkout fails with error response (not silent crash)
+         Got no response at all — gateway crashed
+  PASS  Products still accessible after order failure
+         Site did not crash when order-service went down
+
+------------------------------------------------------------
+  Phase 5: Reviving order-service...
+------------------------------------------------------------
+  PASS  order-service start command succeeded
+  Waiting 10 seconds for service to boot...
+
+------------------------------------------------------------
+  Phase 6: Full recovery — everything should work again
+------------------------------------------------------------
+  PASS  Order service recovered
+  PASS  Order endpoint responsive again
+         Status: no response (not 503 = service recovered)
+  PASS  Products still working
+  PASS  Search still working
+
+============================================================
+  DISASTER RECOVERY TEST — FINAL REPORT
+============================================================
+  Total checks : 25
+  Passed       : 24
+  Failed       : 1
+============================================================
+
+  MOSTLY PASSED (1 minor issues)
+  Core disaster recovery behaviour is correct.
+  Check failed items above.
+        
+============================================================

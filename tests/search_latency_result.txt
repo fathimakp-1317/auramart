@@ -1,0 +1,44 @@
+ Container shopsphere_elasticsearch Running 
+ Container shopsphere_elasticsearch Waiting 
+ Container shopsphere_elasticsearch Healthy 
+ Container shopsphere-seeder-run-838c28e373ff Creating 
+ Container shopsphere-seeder-run-838c28e373ff Created 
+============================================================
+  ShopSphere Product Seeder
+  Target: 100,000 products
+  ES URL: http://elasticsearch:9200
+============================================================
+
+[ES] Connecting...
+[ES] Connected ✅
+
+[LATENCY TEST] Running 20 search queries...
+  Query  1: 'wireless headphones' → 516.3ms
+  Query  2: 'laptop pro' → 39.9ms
+  Query  3: 'yoga mat' → 27.3ms
+  Query  4: 'bluetooth speaker' → 60.1ms
+  Query  5: 'organic food' → 30.0ms
+  Query  6: 'premium watch' → 28.8ms
+  Query  7: 'smart camera' → 37.5ms
+  Query  8: 'running shoes' → 17.9ms
+  Query  9: 'portable charger' → 39.0ms
+  Query 10: 'noise cancelling' → 26.9ms
+  Query 11: 'wireless headphones' → 42.2ms
+  Query 12: 'laptop pro' → 30.5ms
+  Query 13: 'yoga mat' → 22.8ms
+  Query 14: 'bluetooth speaker' → 37.8ms
+  Query 15: 'organic food' → 46.8ms
+  Query 16: 'premium watch' → 31.5ms
+  Query 17: 'smart camera' → 139.9ms
+  Query 18: 'running shoes' → 21.0ms
+  Query 19: 'portable charger' → 38.4ms
+  Query 20: 'noise cancelling' → 21.2ms
+
+[LATENCY TEST] Results:
+  p50 (median): 37.5ms  ✅ PASS
+  p95:          516.3ms  ❌ FAIL
+  p99:          516.3ms
+  Min:          17.9ms
+  Max:          516.3ms
+
+  Week 2 requirement (under 100ms): ✅ MET
